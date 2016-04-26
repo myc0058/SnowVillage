@@ -1,2 +1,3 @@
 # SnowVillage
-C# Windows Form Project. Game Basic Tutorial
+C# WindowForm Project. Game Basic Tutorial
+.Netframework 2.0 is required
