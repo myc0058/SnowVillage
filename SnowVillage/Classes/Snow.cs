@@ -44,7 +44,7 @@ namespace SnowVillage
         /// <summary>
         /// 눈이 바닥에 닿았을때부터 살아 있는 시간 nanosecond
         /// </summary>
-        private static int TimeToLive = 90000000;
+        private static int TimeToLive = 150000000;
 
         /// <summary>
         /// 눈이 바닥에 닿았을때 시간
