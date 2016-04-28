@@ -41,6 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Moon.cs" />
+    <Compile Include="Classes\UFO.cs" />
+    <Compile Include="Classes\VillageSkyLine.cs" />
+    <Compile Include="Interfaces\IDestroyable.cs" />
     <Compile Include="Interfaces\ILogicRenderable.cs" />
     <Compile Include="Classes\Snow.cs" />
     <Compile Include="Classes\Wind.cs" />
@@ -79,7 +83,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\horizon-34844_960_720.png" />
+    <None Include="Resources\Village.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\UFO.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\Moon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

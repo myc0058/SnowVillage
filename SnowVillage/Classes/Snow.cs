@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SnowVillage;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
@@ -8,7 +9,7 @@ namespace SnowVillage
     /// <summary>
     /// 눈은 왼쪽 오른쪽으로 조금씩 흔들리면서 떨어지면 모든 눈은 떨어지는 속도가 같지 않습니다.
     /// </summary>
-    public class Snow : IRenderable, ILogicRenderable
+    public class Snow : IRenderable, ILogicRenderable, IDestroyable
     {
 
         /// <summary>
@@ -29,12 +30,12 @@ namespace SnowVillage
         /// <summary>
         /// 눈 생성시 최초 Y좌표 최대값
         /// </summary>
-        private const int maxInitTopValue = 0;
+        private static int maxInitTopValue = 0;
 
         /// <summary>
         /// 눈 생성시 최초 Y좌표 최소값
         /// </summary>
-        private const int minInitTopValue = -10;
+        private static int minInitTopValue = -10;
 
         /// <summary>
         /// 눈의 크기
@@ -44,7 +45,27 @@ namespace SnowVillage
         /// <summary>
         /// 눈이 바닥에 닿았을때부터 살아 있는 시간 nanosecond
         /// </summary>
-        private static int TimeToLive = 150000000;
+        private static long timeToLive = 150000000;
+
+        /// <summary>
+        /// 눈을 그릴때 사용할 Brush
+        /// </summary>
+        private static Brush snowBrush = new SolidBrush(Color.White);
+
+        /// <summary>
+        /// 눈이 떨어지는 최소 속도
+        /// </summary>
+        private const int minDropSpeed = 3;
+
+        /// <summary>
+        /// 눈이 떨어지는 최대 속도
+        /// </summary>
+        private const int maxDropSpeed = 7;
+
+        /// <summary>
+        /// 한번에 눈이 생성되는 수
+        /// </summary>
+        private const int createSnowCount = 5;
 
         /// <summary>
         /// 눈이 바닥에 닿았을때 시간
@@ -81,7 +102,7 @@ namespace SnowVillage
             int yPos = snowPosMaker.Next(minInitTopValue, maxInitTopValue);
 
             point = new Point(xPos, yPos);
-            dropSpeed = snowPosMaker.Next(GlobalConsts.MinDropSpeed, GlobalConsts.MaxDropSpeed);
+            dropSpeed = snowPosMaker.Next(minDropSpeed, maxDropSpeed);
         }
 
         /// <summary>
@@ -90,7 +111,7 @@ namespace SnowVillage
         /// <param name="canvas">렌더링할 타겟</param>
         public void Render(Graphics canvas)
         {
-            canvas.FillRectangle(GlobalConsts.SnowBrush, point.X, point.Y,
+            canvas.FillRectangle(snowBrush, point.X, point.Y,
                 Snow.Size.Width, Snow.Size.Height);
         }
 
@@ -101,7 +122,7 @@ namespace SnowVillage
         {
             if (isGrounded)
             {
-                if (DateTime.Now.Ticks - timeGrounded.Ticks > TimeToLive)
+                if (DateTime.Now.Ticks - timeGrounded.Ticks > timeToLive)
                 {
                     IsDead = true;
                 }
@@ -138,15 +159,15 @@ namespace SnowVillage
                  */
 
                 //스카이라인 영역안에 있는지 검사
-                if ((point.X >= GlobalConsts.InitPosVillage.X) && 
-                    (point.Y >= GlobalConsts.InitPosVillage.Y) &&
-                    (point.X <= GlobalConsts.InitPosVillage.X + GlobalConsts.BgVillage.Width-1) &&
-                    (point.Y <= GlobalConsts.InitPosVillage.Y + GlobalConsts.BgVillage.Height-1))
+                if ((point.X >= VillageSkyLine.Pos.X) && 
+                    (point.Y >= VillageSkyLine.Pos.Y) &&
+                    (point.X <= VillageSkyLine.Pos.X + VillageSkyLine.Image.Width-1) &&
+                    (point.Y <= VillageSkyLine.Pos.Y + VillageSkyLine.Image.Height-1))
                 {
                     //눈의 위치의 픽셀을 가지고 온다.
-                    Color villageColorSnowPlaced = GlobalConsts.BgVillage.GetPixel(
-                                                        point.X - GlobalConsts.InitPosVillage.X,
-                                                        point.Y - GlobalConsts.InitPosVillage.Y);
+                    Color villageColorSnowPlaced = VillageSkyLine.Image.GetPixel(
+                                                        point.X - VillageSkyLine.Pos.X,
+                                                        point.Y - VillageSkyLine.Pos.Y);
 
                     //픽셀에 알파값이 있다면 스카이라인영역이니 멈춘다.
                     if (villageColorSnowPlaced.A > 0)
@@ -195,6 +216,38 @@ namespace SnowVillage
             set
             {
                 isDead = value;
+            }
+        }
+
+        public static Brush SnowBrush
+        {
+            get
+            {
+                return snowBrush;
+            }
+        }
+
+        public static int CreateSnowCount
+        {
+            get
+            {
+                return createSnowCount;
+            }
+        }
+
+        public static int MinDropSpeed
+        {
+            get
+            {
+                return minDropSpeed;
+            }
+        }
+
+        public static int MaxDropSpeed
+        {
+            get
+            {
+                return maxDropSpeed;
             }
         }
     }

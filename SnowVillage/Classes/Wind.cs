@@ -24,7 +24,7 @@ namespace SnowVillage
         /// <summary>
         /// 바람의 방향-세기가 바뀌는 주기  nanosecond
         /// </summary>
-        private const int changeWindInterval = 50000000;
+        private const long changeWindInterval = 50000000;
 
         /// <summary>
         /// 바람의 방향-세기 주기 마다 바뀝니다.

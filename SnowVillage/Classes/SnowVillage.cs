@@ -26,10 +26,18 @@ namespace SnowVillage
         /// </summary>
         private Bitmap backBuffer = new Bitmap(GlobalConsts.CanvasSize.Width, GlobalConsts.CanvasSize.Height);
 
+        /// <summary>
+        /// UFO를 생성한 시간
+        /// </summary>
+        private DateTime createUFOTime = DateTime.MinValue;
+
         public SnowVillage()
         {
             //리스트에 바람을 제일 먼저 넣어야 문제가 없다.
             logicRenderableObjList.Add(Wind.Instance());
+
+            renderableObjList.Add(Moon.Instance());
+            renderableObjList.Add(VillageSkyLine.Instance());
         }
 
         /// <summary>
@@ -65,24 +73,31 @@ namespace SnowVillage
             #region Game Logic
 
             //눈 생성
-            for (int i = 0; i < GlobalConsts.CreateSnowCount; i++)
+            for (int i = 0; i < Snow.CreateSnowCount; i++)
             {
                 Snow snow = new Snow();
                 renderableObjList.Add(snow);
                 logicRenderableObjList.Add(snow);
             }
 
-            
+            //UFO 생성
+            if (DateTime.Now.Ticks - createUFOTime.Ticks > UFO.CreateUFOCycleTime)
+            {
+                UFO ufo = new UFO();
+                renderableObjList.Add(ufo);
+                logicRenderableObjList.Add(ufo);
+                createUFOTime = DateTime.Now;
+            }
+
             /*
              * 수명이 다한 눈은 지워준다.
              * Loop안에서 리스트의 객체를 삭제해야 하기때문에 역순으로 찾음
              */
             for (int i = renderableObjList.Count-1; i >= 0; i--)
             {
-                if (renderableObjList[i] is Snow)
+                if (renderableObjList[i] is IDestroyable)
                 {
-                    Snow snow = renderableObjList[i] as Snow;
-                    if (snow.IsDead)
+                    if ((renderableObjList[i] as IDestroyable).IsDead)
                         renderableObjList.RemoveAt(i);
                 }
             }
@@ -103,9 +118,6 @@ namespace SnowVillage
 
             //바탕색을 칠함.
             temp.Clear(Color.Gray);
-
-            //스카이라인 그리기
-            temp.DrawImage(GlobalConsts.BgVillage, GlobalConsts.InitPosVillage);
 
             //화면에 그려야될 객체들 그려주기
             foreach (IRenderable obj in renderableObjList)
