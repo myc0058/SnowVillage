@@ -10,10 +10,16 @@ namespace SnowVillage
     /// </summary>
     public class SnowVillage : IRenderable, IDisposable
     {
+        private static class LayerLevel
+        {
+            public static readonly int First = 0;
+            public static readonly int Second = 1;
+        }
+
         /// <summary>
         /// 화면에 그릴수 있는 객체 모음
         /// </summary>
-        private List<IRenderable> renderableObjList = new List<IRenderable>();
+        private List<List<IRenderable>> renderableObjList = new List<List<IRenderable>>();
 
         /// <summary>
         /// 로직을 처리해야되는 객체 모음
@@ -36,8 +42,12 @@ namespace SnowVillage
             //리스트에 바람을 제일 먼저 넣어야 문제가 없다.
             logicRenderableObjList.Add(Wind.Instance());
 
-            renderableObjList.Add(Moon.Instance());
-            renderableObjList.Add(VillageSkyLine.Instance());
+            //지금은 Layer가 두개만 필요하기 때문에 두개만 만든다.
+            renderableObjList.Add(new List<IRenderable>());
+            renderableObjList.Add(new List<IRenderable>());
+
+            renderableObjList[LayerLevel.First].Add(Moon.Instance());
+            renderableObjList[LayerLevel.First].Add(VillageSkyLine.Instance());
         }
 
         /// <summary>
@@ -76,7 +86,7 @@ namespace SnowVillage
             for (int i = 0; i < Snow.CreateSnowCount; i++)
             {
                 Snow snow = new Snow();
-                renderableObjList.Add(snow);
+                renderableObjList[LayerLevel.Second].Add(snow);
                 logicRenderableObjList.Add(snow);
             }
 
@@ -84,23 +94,25 @@ namespace SnowVillage
             if (DateTime.Now.Ticks - createUFOTime.Ticks > UFO.CreateUFOCycleTime)
             {
                 UFO ufo = new UFO();
-                renderableObjList.Add(ufo);
+                renderableObjList[LayerLevel.First].Add(ufo);
                 logicRenderableObjList.Add(ufo);
                 createUFOTime = DateTime.Now;
             }
 
-            /*
-             * 수명이 다한 눈은 지워준다.
-             * Loop안에서 리스트의 객체를 삭제해야 하기때문에 역순으로 찾음
-             */
-            for (int i = renderableObjList.Count-1; i >= 0; i--)
-            {
-                if (renderableObjList[i] is IDestroyable)
+
+            for (int i = 0; i < renderableObjList.Count; i++)
+                for (int j = renderableObjList[i].Count - 1; j >= 0; j--)
                 {
-                    if ((renderableObjList[i] as IDestroyable).IsDead)
-                        renderableObjList.RemoveAt(i);
+                    /*
+                    * 수명이 다한 객체는 지워준다.
+                    * Loop안에서 리스트의 객체를 삭제해야 하기때문에 역순으로 찾음
+                    */
+                    if (renderableObjList[i][j] is IDestroyable)
+                    {
+                        if ((renderableObjList[i][j] as IDestroyable).IsDead)
+                            renderableObjList[i].RemoveAt(j);
+                    }
                 }
-            }
 
             //로직 적용이 필요한 객체들 로직 처리해 주기
             foreach (ILogicRenderable obj in logicRenderableObjList)
@@ -120,10 +132,11 @@ namespace SnowVillage
             temp.Clear(Color.Gray);
 
             //화면에 그려야될 객체들 그려주기
-            foreach (IRenderable obj in renderableObjList)
-            {
-                obj.Render(temp);
-            }
+            for (int i = 0; i < renderableObjList.Count; i++)
+                for (int j = 0; j < renderableObjList[i].Count; j++)
+                {
+                    renderableObjList[i][j].Render(temp);
+                }
             #endregion
 
             //마지막으로 Window에 그림
