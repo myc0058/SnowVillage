@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SnowVillage
 {
-    public class UFO : IRenderable, ILogicRenderable, IDestroyable
+    public class UFO : BaseRenderable, ILogicRenderable, IDestroyable
     {
         /// <summary>
         /// 이미지
@@ -27,16 +27,6 @@ namespace SnowVillage
         /// </summary>
         private static Point initPos = new Point(-20, 200);
 
-        /// <summary>
-        /// 위치
-        /// </summary>
-        private Point pos = new Point(0, 0);
-
-        /// <summary>
-        /// UFO를 파괴해야 할때 true
-        /// </summary>
-        private bool isDead = false;
-
         public UFO()
         {
             pos.X = initPos.X;
@@ -45,20 +35,19 @@ namespace SnowVillage
 
         public void LogicRender()
         {
+            if (isDead) return;
+
             pos.X += speed;
         }
 
-        public void Render(Graphics canvas)
+        public override void Render(Graphics canvas)
         {
-            canvas.DrawImage(image, pos);
-        }
+            if (isDead) return;
 
-        public Point Pos
-        {
-            get
-            {
-                return pos;
-            }
+            Point worldPoint = GetWorldPoint();
+            canvas.DrawImage(image, worldPoint.X, worldPoint.Y, image.Width, image.Height);
+
+            base.Render(canvas);
         }
 
         public static Bitmap Image
@@ -66,19 +55,6 @@ namespace SnowVillage
             get
             {
                 return image;
-            }
-        }
-
-        public bool IsDead
-        {
-            get
-            {
-                return isDead;
-            }
-
-            set
-            {
-                isDead = value;
             }
         }
 

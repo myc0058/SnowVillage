@@ -10,5 +10,7 @@ namespace SnowVillage
         {
             get; set;
         }
+
+        bool TryDestroy();
     }
 }

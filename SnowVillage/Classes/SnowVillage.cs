@@ -12,14 +12,15 @@ namespace SnowVillage
     {
         private static class LayerLevel
         {
-            public static readonly int First = 0;
-            public static readonly int Second = 1;
+            public static readonly int BaseLayer = 0;
+            public static readonly int UFOLayer = 1;
+            public static readonly int SnowLayer = 2;
         }
 
         /// <summary>
         /// 화면에 그릴수 있는 객체 모음
         /// </summary>
-        private List<List<IRenderable>> renderableObjList = new List<List<IRenderable>>();
+        private List<List<BaseRenderable>> renderableRootObjList = new List<List<BaseRenderable>>();
 
         /// <summary>
         /// 로직을 처리해야되는 객체 모음
@@ -43,11 +44,12 @@ namespace SnowVillage
             logicRenderableObjList.Add(Wind.Instance());
 
             //지금은 Layer가 두개만 필요하기 때문에 두개만 만든다.
-            renderableObjList.Add(new List<IRenderable>());
-            renderableObjList.Add(new List<IRenderable>());
+            renderableRootObjList.Add(new List<BaseRenderable>());
+            renderableRootObjList.Add(new List<BaseRenderable>());
+            renderableRootObjList.Add(new List<BaseRenderable>());
 
-            renderableObjList[LayerLevel.First].Add(Moon.Instance());
-            renderableObjList[LayerLevel.First].Add(VillageSkyLine.Instance());
+            renderableRootObjList[LayerLevel.BaseLayer].Add(Moon.Instance());
+            renderableRootObjList[LayerLevel.BaseLayer].Add(VillageSkyLine.Instance());
         }
 
         /// <summary>
@@ -82,36 +84,34 @@ namespace SnowVillage
         {
             #region Game Logic
 
-            //눈 생성
-            for (int i = 0; i < Snow.CreateSnowCount; i++)
-            {
-                Snow snow = new Snow();
-                renderableObjList[LayerLevel.Second].Add(snow);
-                logicRenderableObjList.Add(snow);
-            }
-
             //UFO 생성
             if (DateTime.Now.Ticks - createUFOTime.Ticks > UFO.CreateUFOCycleTime)
             {
                 UFO ufo = new UFO();
-                renderableObjList[LayerLevel.First].Add(ufo);
+                renderableRootObjList[LayerLevel.UFOLayer].Add(ufo);
                 logicRenderableObjList.Add(ufo);
                 createUFOTime = DateTime.Now;
             }
 
+            //눈 생성
+            for (int i = 0; i < Snow.CreateSnowCount; i++)
+            {
+                Snow snow = new Snow();
+                renderableRootObjList[LayerLevel.SnowLayer].Add(snow);
+                logicRenderableObjList.Add(snow);
+            }
 
-            for (int i = 0; i < renderableObjList.Count; i++)
-                for (int j = renderableObjList[i].Count - 1; j >= 0; j--)
+            for (int i = 0; i < renderableRootObjList.Count; i++)
+                for (int j = renderableRootObjList[i].Count - 1; j >= 0; j--)
                 {
                     /*
                     * 수명이 다한 객체는 지워준다.
                     * Loop안에서 리스트의 객체를 삭제해야 하기때문에 역순으로 찾음
                     */
-                    if (renderableObjList[i][j] is IDestroyable)
-                    {
-                        if ((renderableObjList[i][j] as IDestroyable).IsDead)
-                            renderableObjList[i].RemoveAt(j);
-                    }
+
+                    if (renderableRootObjList[i][j].IsDead)
+                        if (renderableRootObjList[i][j].TryDestroy() == true)
+                            renderableRootObjList[i].RemoveAt(j);
                 }
 
             //로직 적용이 필요한 객체들 로직 처리해 주기
@@ -120,6 +120,60 @@ namespace SnowVillage
                 obj.LogicRender();
             }
 
+
+            //눈 충돌 처리
+            for (int i = renderableRootObjList[LayerLevel.SnowLayer].Count - 1; i >= 0; i--)
+            {
+                Snow snow = renderableRootObjList[LayerLevel.SnowLayer][i] as Snow;
+
+                //스카이라인 충돌 체크
+                //스카이라인 영역안에 있는지 검사
+                if ((snow.Pos.X >= VillageSkyLine.Instance().Pos.X) &&
+                    (snow.Pos.Y >= VillageSkyLine.Instance().Pos.Y) &&
+                    (snow.Pos.X <= VillageSkyLine.Instance().Pos.X + VillageSkyLine.Image.Width - 1) &&
+                    (snow.Pos.Y <= VillageSkyLine.Instance().Pos.Y + VillageSkyLine.Image.Height - 1))
+                {
+                    //눈의 위치의 픽셀을 가지고 온다.
+                    Color villageColorSnowPlaced = VillageSkyLine.Image.GetPixel(
+                                                        snow.Pos.X - VillageSkyLine.Instance().Pos.X,
+                                                        snow.Pos.Y - VillageSkyLine.Instance().Pos.Y);
+
+                    //픽셀에 알파값이 있다면 스카이라인영역이니 멈춘다.
+                    if (villageColorSnowPlaced.A > 0)
+                    {
+                        snow.IsGrounded = true;
+                        snow.TimeGrounded = DateTime.Now;
+                        VillageSkyLine.Instance().AddChild(snow);
+                        renderableRootObjList[LayerLevel.SnowLayer].RemoveAt(i);
+                    }
+                }
+
+
+                // UFO와 충돌 체크
+                //UFO 영역안에 있는지 검사
+                for (int j = 0; j < renderableRootObjList[LayerLevel.UFOLayer].Count; j++)
+                {
+                    if ((snow.Pos.X >= renderableRootObjList[LayerLevel.UFOLayer][j].Pos.X) &&
+                    (snow.Pos.Y >= renderableRootObjList[LayerLevel.UFOLayer][j].Pos.Y) &&
+                    (snow.Pos.X <= renderableRootObjList[LayerLevel.UFOLayer][j].Pos.X + UFO.Image.Width - 1) &&
+                    (snow.Pos.Y <= renderableRootObjList[LayerLevel.UFOLayer][j].Pos.Y + UFO.Image.Height - 1))
+                    {
+                        //눈의 위치의 픽셀을 가지고 온다.
+                        Color ufoColorSnowPlaced = UFO.Image.GetPixel(
+                                                            snow.Pos.X - renderableRootObjList[LayerLevel.UFOLayer][j].Pos.X,
+                                                            snow.Pos.Y - renderableRootObjList[LayerLevel.UFOLayer][j].Pos.Y);
+
+                        //픽셀에 알파값이 있다면 UFO영억이니 멈춘다.
+                        if (ufoColorSnowPlaced.A > 0)
+                        {
+                            snow.IsGrounded = true;
+                            snow.TimeGrounded = DateTime.Now;
+                            renderableRootObjList[LayerLevel.UFOLayer][j].AddChild(snow);
+                            renderableRootObjList[LayerLevel.SnowLayer].RemoveAt(i);
+                        }
+                    }
+                }
+            }
             #endregion
 
 
@@ -132,10 +186,10 @@ namespace SnowVillage
             temp.Clear(Color.Gray);
 
             //화면에 그려야될 객체들 그려주기
-            for (int i = 0; i < renderableObjList.Count; i++)
-                for (int j = 0; j < renderableObjList[i].Count; j++)
+            for (int i = 0; i < renderableRootObjList.Count; i++)
+                for (int j = 0; j < renderableRootObjList[i].Count; j++)
                 {
-                    renderableObjList[i][j].Render(temp);
+                    renderableRootObjList[i][j].Render(temp);
                 }
             #endregion
 

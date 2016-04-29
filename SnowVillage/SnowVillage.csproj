@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\BaseRenderable.cs" />
     <Compile Include="Classes\Moon.cs" />
     <Compile Include="Classes\UFO.cs" />
     <Compile Include="Classes\VillageSkyLine.cs" />

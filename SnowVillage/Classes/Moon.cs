@@ -5,12 +5,12 @@ using System.Text;
 
 namespace SnowVillage
 {
-    public class Moon : IRenderable
+    public class Moon : BaseRenderable
     {
         /// <summary>
         /// 위치
         /// </summary>
-        private static Point pos = new Point(0, 0);
+        private static Point initPos = new Point(0, 0);
 
         /// <summary>
         /// 이미지
@@ -38,21 +38,24 @@ namespace SnowVillage
 
         #endregion
 
-        public void Render(Graphics canvas)
+        public override void Render(Graphics canvas)
         {
-            canvas.DrawImage(Image, pos.X, pos.Y, Image.Width, Image.Height);
+            Point worldPoint = GetWorldPoint();
+            canvas.DrawImage(Image, worldPoint.X, worldPoint.Y, Image.Width, Image.Height);
+
+            base.Render(canvas);
         }
 
-        public static Point Pos
+        public static Point InitPos
         {
             get
             {
-                return pos;
+                return initPos;
             }
 
             set
             {
-                pos = value;
+                initPos = value;
             }
         }
 

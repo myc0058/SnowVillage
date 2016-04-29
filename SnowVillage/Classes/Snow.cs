@@ -9,7 +9,7 @@ namespace SnowVillage
     /// <summary>
     /// 눈은 왼쪽 오른쪽으로 조금씩 흔들리면서 떨어지면 모든 눈은 떨어지는 속도가 같지 않습니다.
     /// </summary>
-    public class Snow : IRenderable, ILogicRenderable, IDestroyable
+    public class Snow : BaseRenderable, ILogicRenderable, IDestroyable
     {
 
         /// <summary>
@@ -73,19 +73,9 @@ namespace SnowVillage
         private DateTime timeGrounded = DateTime.MinValue;
 
         /// <summary>
-        /// 자기 자신의 좌표
-        /// </summary>
-        private Point point = Point.Empty;
-
-        /// <summary>
         /// 어딘가에 부딪쳐서 더이상 움직일수 없을때 True, 아니면 False
         /// </summary>
         private bool isGrounded = false;
-
-        /// <summary>
-        /// 눈이 수명을 다하면 true
-        /// </summary>
-        private bool isDead = false;
 
         /// <summary>
         /// 떨어지는 속도. 눈마다 다르다.
@@ -101,7 +91,7 @@ namespace SnowVillage
             int xPos = snowPosMaker.Next(0, GlobalConsts.CanvasSize.Width);
             int yPos = snowPosMaker.Next(minInitTopValue, maxInitTopValue);
 
-            point = new Point(xPos, yPos);
+            pos = new Point(xPos, yPos);
             dropSpeed = snowPosMaker.Next(minDropSpeed, maxDropSpeed);
         }
 
@@ -109,10 +99,15 @@ namespace SnowVillage
         /// IRenderable 구현 함수
         /// </summary>
         /// <param name="canvas">렌더링할 타겟</param>
-        public void Render(Graphics canvas)
+        public override void Render(Graphics canvas)
         {
-            canvas.FillRectangle(snowBrush, point.X, point.Y,
+            if (isDead) return;
+
+            Point worldPoint = GetWorldPoint();
+            canvas.FillRectangle(snowBrush, worldPoint.X, worldPoint.Y,
                 Snow.Size.Width, Snow.Size.Height);
+
+            base.Render(canvas);
         }
 
         /// <summary>
@@ -120,63 +115,29 @@ namespace SnowVillage
         /// </summary>
         public void LogicRender()
         {
+            if (isDead) return;
+
             if (isGrounded)
             {
-                if (DateTime.Now.Ticks - timeGrounded.Ticks > timeToLive)
+                if (DateTime.Now.Ticks - TimeGrounded.Ticks > timeToLive)
                 {
                     IsDead = true;
                 }
             }
             else
             {
-                /*
-                 * 바닥에 닿았을때 처리
-                 * 스카이라인에 닿으면 멈추도록 하기위해 주석처리 한다. 
-                if (point.Y + dropSpeed > GlobalConsts.CanvasSize.Height)
-                { 
-                    IsGrounded = true;
-                    timeGrounded = DateTime.Now;
-                    return;
-                }
-                */
-
                 bool noWind = Wind.Instance().Force == 0;
                 if (noWind)
                 {
                     int swingValue = snowPosMaker.Next(minSwingValue, maxSwingValue);
-                    point.X += swingValue;
+                    pos.X += swingValue;
                 }
                 else
                 {
-                    point.X += Wind.Instance().Force;
+                    pos.X += Wind.Instance().Force;
                 }
 
-                point.Y += dropSpeed;
-
-
-                /*
-                 * 스카이라인에 닿으면 눈을 멈춘다.
-                 */
-
-                //스카이라인 영역안에 있는지 검사
-                if ((point.X >= VillageSkyLine.Pos.X) && 
-                    (point.Y >= VillageSkyLine.Pos.Y) &&
-                    (point.X <= VillageSkyLine.Pos.X + VillageSkyLine.Image.Width-1) &&
-                    (point.Y <= VillageSkyLine.Pos.Y + VillageSkyLine.Image.Height-1))
-                {
-                    //눈의 위치의 픽셀을 가지고 온다.
-                    Color villageColorSnowPlaced = VillageSkyLine.Image.GetPixel(
-                                                        point.X - VillageSkyLine.Pos.X,
-                                                        point.Y - VillageSkyLine.Pos.Y);
-
-                    //픽셀에 알파값이 있다면 스카이라인영역이니 멈춘다.
-                    if (villageColorSnowPlaced.A > 0)
-                    {
-                        IsGrounded = true;
-                        timeGrounded = DateTime.Now;
-                        return;
-                    }
-                }
+                pos.Y += dropSpeed;
             }
         }
 
@@ -203,19 +164,6 @@ namespace SnowVillage
             set
             {
                 isGrounded = value;
-            }
-        }
-
-        public bool IsDead
-        {
-            get
-            {
-                return isDead;
-            }
-
-            set
-            {
-                isDead = value;
             }
         }
 
@@ -248,6 +196,19 @@ namespace SnowVillage
             get
             {
                 return maxDropSpeed;
+            }
+        }
+
+        public DateTime TimeGrounded
+        {
+            get
+            {
+                return timeGrounded;
+            }
+
+            set
+            {
+                timeGrounded = value;
             }
         }
     }
